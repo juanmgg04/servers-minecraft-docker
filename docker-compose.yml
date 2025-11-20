@@ -1,0 +1,44 @@
+version: "3.9"
+services:
+  crafty:
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
+    container_name: crafty_container
+    restart: always
+    environment:
+      - TZ=Etc/UTC
+    ports:
+      - "8443:8443" # HTTPS panel
+      - "8123:8123" # Dynmap opcional
+      - "19132:19132/udp" # Bedrock opcional
+      - "25565:25565" # Rango de puertos para servidores MC gestionados por Crafty
+    # IMPORTANTE en Windows/WSL/OneDrive: usar named volumes para evitar corrupción de mundos
+    volumes:
+      - crafty_backups:/crafty/backups
+      - crafty_logs:/crafty/logs
+      - crafty_servers:/crafty/servers
+      - crafty_config:/crafty/app/config
+      - crafty_import:/crafty/import
+
+  playit:
+    image: ghcr.io/playit-cloud/playit-agent:latest
+    container_name: playit
+    restart: unless-stopped
+    depends_on:
+      - crafty
+    env_file:
+      - playit.env
+    # Usa SECRET_KEY en playit.env (evita network_mode: host en Docker Desktop)
+    # Para el túnel en Playit: Dirección local 'crafty' y puerto del servidor (p.ej. 25565)
+
+volumes:
+  crafty_backups:
+  crafty_logs:
+  crafty_servers:
+  crafty_config:
+  crafty_import:
+
+networks:
+  default:
+    name: minecraft_net
+
+
