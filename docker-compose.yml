@@ -13,9 +13,10 @@ services:
       - "25565:25565" # Rango de puertos para servidores MC gestionados por Crafty
     # IMPORTANTE en Windows/WSL/OneDrive: usar named volumes para evitar corrupción de mundos
     volumes:
+      # Mapeo recomendando para que los mundos queden en la raíz del proyecto:
+      - ./worlds:/crafty/servers
       - crafty_backups:/crafty/backups
       - crafty_logs:/crafty/logs
-      - crafty_servers:/crafty/servers
       - crafty_config:/crafty/app/config
       - crafty_import:/crafty/import
 
@@ -29,6 +30,18 @@ services:
       - playit.env
     # Usa SECRET_KEY en playit.env (evita network_mode: host en Docker Desktop)
     # Para el túnel en Playit: Dirección local 'crafty' y puerto del servidor (p.ej. 25565)
+
+  # Servicio de una sola ejecución para migrar datos desde el named volume
+  # hacia el bind-mount local './worlds'. Ejecutar antes de arrancar `crafty`
+  # cuando se migra desde un volumen existente.
+  migrate_worlds:
+    image: alpine:3.18
+    container_name: migrate_worlds
+    entrypoint: ["sh", "-c", "cp -a /from/* /to/ || true"]
+    volumes:
+      - crafty_servers:/from:ro
+      - ./worlds:/to
+    restart: 'no'
 
 volumes:
   crafty_backups:
